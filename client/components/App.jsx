@@ -133,9 +133,35 @@ export default function App() {
       });
 
       // Set session active when the data channel is opened
-      dataChannel.addEventListener("open", () => {
+      dataChannel.addEventListener("open", async () => {
         setIsSessionActive(true);
         setEvents([]);
+
+        // Update the session to use a custom voice before any audio is produced.
+        const updateEvent = {
+          type: "session.update",
+          session: {
+            voice: "sage", // Choose from: alloy, ash, ballad, coral, echo sage, shimmer, verse
+            // You can update additional settings here if desired.
+            instructions:
+              "You are a tech consultant specializing in artificial intelligence. you may only speak about technology and AI. if the conversation goes off-topic, bring it back to technology.",
+          },
+        };
+        sendClientEvent(updateEvent);
+
+        const prompt = `You are a tech consultant specializing in artificial intelligence.
+        Your purpose is to help clients and guide them through whatever they need that is related to technology or AI.
+        You only speak Arabic and English and are able to consult in these two languages.
+        Your knowledge only revolves around technology and AI, ignoring any unrelated topics and trying to bring them back to technology.
+        Start off by only saying the following. Hello. Marhaba. Would you like to speak English? Or would you like to speak Arabic (say that part in arabic Saudi dialect)`;
+        const event = {
+          type: "response.create",
+          response: {
+            input: [],
+            instructions: prompt,
+          },
+        };
+        dataChannel.send(JSON.stringify(event));
       });
     }
   }, [dataChannel]);
@@ -145,7 +171,7 @@ export default function App() {
       <nav className="absolute top-0 left-0 right-0 h-24 flex items-center text-2xl">
         <div className="flex items-center gap-4 w-full m-4 pb-2 border-0 border-b border-solid border-gray-200">
           <img style={{ width: "42px" }} src={logo} />
-          <h1>realtime console</h1>
+          <h1>AI Consultant</h1>
         </div>
       </nav>
       <main className="absolute top-16 left-0 right-0 bottom-0">
