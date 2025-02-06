@@ -143,7 +143,7 @@ export default function App() {
         const updateEvent = {
           type: "session.update",
           session: {
-            voice: "sage", // Choose from: alloy, ash, ballad, coral, echo sage, shimmer, verse
+            voice: "ash", // Choose from: alloy, ash, ballad, coral, echo sage, shimmer, verse
             // You can update additional settings here if desired.
             instructions:
               "You are a tech consultant specializing in artificial intelligence. you may only speak about technology and AI. if the conversation goes off-topic, bring it back to technology.",
@@ -151,11 +151,8 @@ export default function App() {
         };
         sendClientEvent(updateEvent);
 
-        const prompt = `You are a tech consultant specializing in artificial intelligence.
-        Your purpose is to help clients and guide them through whatever they need that is related to technology or AI.
-        You only speak Arabic and English and are able to consult in these two languages.
-        Your knowledge only revolves around technology and AI, ignoring any unrelated topics and trying to bring them back to technology.
-        Start off by only saying the following. Hello. Marhaba. Would you like to speak English? Or would you like to speak Arabic (say that part in arabic Saudi dialect)`;
+        const prompt = `say the following: "Hello. Marhaba would you like to speak in English? ولا تفضل اننا نتكلم عربي؟"
+        Then ask what their name is.`;
         const event = {
           type: "response.create",
           response: {
@@ -170,16 +167,14 @@ export default function App() {
 
   return (
     <>
-      <nav className="absolute top-0 left-0 right-0 h-24 flex items-center text-2xl">
-        <div className="flex items-center gap-4 w-full m-4 pb-2 border-0 border-b border-solid border-gray-200">
+      <nav className="absolute top-0 left-0 right-0 h-24 flex items-center text-2xl bg-transparent">
+        <div className="flex items-center gap-4 w-full m-4 pb-2">
           <img style={{ width: "42px" }} src={logo} />
           <img
             src={companyLogo}
             alt="comapny logo"
-            style={{ width: "220px", height: "80px" }}
+            style={{ width: "220px", height: "80px", zIndex: "100" }}
           />
-
-          <h1>AI Consultant</h1>
         </div>
       </nav>
 
@@ -188,7 +183,7 @@ export default function App() {
           <section className="absolute top-0 left-0 right-0 bottom-32 px-4 overflow-y-auto">
             <ThreeAnimation analyzer={analyzer} />
           </section>
-          <section className="absolute h-32 left-0 right-0 bottom-0 p-4">
+          <section className="absolute h-32 left-0 right-0 bottom-0 p-4 bg-transparent border-0">
             <SessionControls
               startSession={startSession}
               stopSession={stopSession}

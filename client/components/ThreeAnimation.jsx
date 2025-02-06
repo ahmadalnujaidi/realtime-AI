@@ -1,5 +1,4 @@
 // ThreeAnimation.jsx
-
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
@@ -9,7 +8,8 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
 
 export default function ThreeAnimation({ analyzer }) {
   const mountRef = useRef(null);
-  // Update uniforms for purple color (if you need them in your shader)
+
+  // Uniforms for time, frequency, and color.
   const uniformsRef = useRef({
     u_time: { value: 0.0 },
     u_frequency: { value: 0.0 },
@@ -19,10 +19,7 @@ export default function ThreeAnimation({ analyzer }) {
   });
 
   useEffect(() => {
-    // 1) Grab the container from the ref
     const container = mountRef.current;
-
-    // 2) Setup renderer, scene, and camera
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -31,10 +28,10 @@ export default function ThreeAnimation({ analyzer }) {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(0, -2, 14);
+    camera.position.set(0, -2, 20);
     camera.lookAt(0, 0, 0);
 
-    // 3) Setup postprocessing
+    // Setup postprocessing.
     const renderScene = new RenderPass(scene, camera);
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(width, height));
     bloomPass.threshold = 1;
@@ -46,21 +43,31 @@ export default function ThreeAnimation({ analyzer }) {
     const outputPass = new OutputPass();
     bloomComposer.addPass(outputPass);
 
-    // 4) Create geometry and shader material
     const uniforms = uniformsRef.current;
+
+    // Updated vertex shader:
+    // The "soundFactor" is 0 when u_frequency is low (no audio) and approaches 1 as u_frequency increases.
     const vertexShader = `
       uniform float u_time;
       uniform float u_frequency;
       
-      // A simple vertex shader that just passes through position.
-      // We do not use u_time for displacement here since we'll animate hovering via object transforms.
-      // (Alternatively, you could add additional noise or oscillation here.)
       void main() {
-        // Add a displacement only if sound is present.
-        vec3 newPosition = position + normal * (u_frequency / 200.0);
+        // Compute a sound factor: when u_frequency is below 5, soundFactor is 0;
+        // when above 20, soundFactor is 1. Adjust these values as needed.
+        float soundFactor = smoothstep(5.0, 20.0, u_frequency);
+        
+        // Create a bubbly vibration that only applies when soundFactor > 0.
+        float vibration = soundFactor * (
+          sin(u_time * 15.0 + position.x * 10.0) * 0.05 +
+          cos(u_time * 20.0 + position.y * 10.0) * 0.05
+        );
+        
+        // Also include your sound-based expansion (if desired).
+        vec3 newPosition = position + normal * (vibration + u_frequency / 200.0);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
       }
     `;
+
     const fragmentShader = `
       uniform float u_red;
       uniform float u_green;
@@ -69,6 +76,7 @@ export default function ThreeAnimation({ analyzer }) {
         gl_FragColor = vec4(u_red, u_green, u_blue, 1.0);
       }
     `;
+
     const material = new THREE.ShaderMaterial({
       uniforms,
       vertexShader,
@@ -76,26 +84,23 @@ export default function ThreeAnimation({ analyzer }) {
       wireframe: true,
     });
 
-    // Use an icosahedron geometry with sufficient detail.
+    // Use a detailed icosahedron geometry to better show the bubbly effect.
     const geometry = new THREE.IcosahedronGeometry(4, 30);
-    // Create the mesh and add it to the scene.
     const mesh = new THREE.Mesh(geometry, material);
     scene.add(mesh);
 
-    // 5) Animation loop: hovering & sound-based expansion
     const clock = new THREE.Clock();
 
     function animate() {
       requestAnimationFrame(animate);
-
       const elapsedTime = clock.getElapsedTime();
 
-      // Always apply a hovering effect (bobbing and slow rotation)
-      mesh.position.y = Math.sin(elapsedTime) * 0.5; // Bobbing effect
+      // Basic hovering and rotation.
+      mesh.position.y = Math.sin(elapsedTime) * 0.5;
       mesh.rotation.x += 0.005;
       mesh.rotation.y += 0.005;
 
-      // If sound data is available, calculate the average frequency and use it to expand the mesh
+      // Update audio-based expansion and vibration.
       if (analyzer) {
         const freqData = new Uint8Array(analyzer.frequencyBinCount);
         analyzer.getByteFrequencyData(freqData);
@@ -104,14 +109,12 @@ export default function ThreeAnimation({ analyzer }) {
           avg += freqData[i];
         }
         avg = avg / freqData.length;
-        uniforms.u_frequency.value = avg; // send to the shader if needed
+        uniforms.u_frequency.value = avg;
 
-        // Determine a scale factor based on the average frequency.
-        // When no sound is present, avg is near 0 (scale factor ~1). When sound increases, the object expands.
-        const scaleFactor = 1 + avg / 200.0; // Adjust divisor for sensitivity as needed.
+        // You can also adjust scale here if you want expansion with audio.
+        const scaleFactor = 1 + avg / 200.0;
         mesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
       } else {
-        // Ensure a default scale when no analyzer is available
         mesh.scale.set(1, 1, 1);
       }
 
@@ -121,7 +124,6 @@ export default function ThreeAnimation({ analyzer }) {
 
     animate();
 
-    // 6) Handle container resizing
     function onResize() {
       const newWidth = container.clientWidth;
       const newHeight = container.clientHeight;
@@ -132,7 +134,6 @@ export default function ThreeAnimation({ analyzer }) {
     }
     window.addEventListener("resize", onResize);
 
-    // 7) Cleanup on unmount
     return () => {
       window.removeEventListener("resize", onResize);
       renderer.dispose();

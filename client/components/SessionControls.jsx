@@ -17,9 +17,9 @@ function SessionStopped({ startSession }) {
       <Button
         onClick={handleStartSession}
         className={isActivating ? "bg-gray-600" : "bg-red-600"}
-        icon={<CloudLightning height={16} />}
+        // icon={<CloudLightning height={16} />}
       >
-        {isActivating ? "starting session..." : "start session"}
+        {isActivating ? "STARTING SESSION..." : "START SESSION"}
       </Button>
     </div>
   );
@@ -58,9 +58,7 @@ function SessionActive({ stopSession, sendTextMessage }) {
       >
         send text
       </Button> */}
-      <Button onClick={stopSession} icon={<CloudOff height={16} />}>
-        disconnect
-      </Button>
+      <Button onClick={stopSession}>DISCONNECT</Button>
     </div>
   );
 }
@@ -74,7 +72,7 @@ export default function SessionControls({
   isSessionActive,
 }) {
   return (
-    <div className="flex gap-4 border-t-2 border-gray-200 h-full rounded-md">
+    <div className="flex gap-4 h-full rounded-md bg-transparent">
       {isSessionActive ? (
         <SessionActive
           stopSession={stopSession}
