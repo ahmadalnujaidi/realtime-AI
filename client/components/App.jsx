@@ -5,6 +5,8 @@ import SessionControls from "./SessionControls";
 import ToolPanel from "./ToolPanel";
 import ThreeAnimation from "./ThreeAnimation";
 import * as THREE from "three";
+import companyLogo from "./assets/companylogo1.png";
+import companyLogo2 from "./assets/companylogo2.png";
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -171,9 +173,16 @@ export default function App() {
       <nav className="absolute top-0 left-0 right-0 h-24 flex items-center text-2xl">
         <div className="flex items-center gap-4 w-full m-4 pb-2 border-0 border-b border-solid border-gray-200">
           <img style={{ width: "42px" }} src={logo} />
+          <img
+            src={companyLogo}
+            alt="comapny logo"
+            style={{ width: "220px", height: "80px" }}
+          />
+
           <h1>AI Consultant</h1>
         </div>
       </nav>
+
       <main className="absolute top-16 left-0 right-0 bottom-0">
         <section className="absolute top-0 left-0 right-0 bottom-0 flex">
           <section className="absolute top-0 left-0 right-0 bottom-32 px-4 overflow-y-auto">
