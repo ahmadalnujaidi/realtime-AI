@@ -35,7 +35,7 @@ function SessionActive({ stopSession, sendTextMessage }) {
 
   return (
     <div className="flex items-center justify-center w-full h-full gap-4">
-      <input
+      {/* <input
         onKeyDown={(e) => {
           if (e.key === "Enter" && message.trim()) {
             handleSendClientEvent();
@@ -57,7 +57,7 @@ function SessionActive({ stopSession, sendTextMessage }) {
         className="bg-blue-400"
       >
         send text
-      </Button>
+      </Button> */}
       <Button onClick={stopSession} icon={<CloudOff height={16} />}>
         disconnect
       </Button>

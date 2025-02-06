@@ -116,8 +116,8 @@ export default function ToolPanel({
 
   return (
     <section className="h-full w-full flex flex-col gap-4">
-      <div className="h-full bg-gray-50 rounded-md p-4">
-        <h2 className="text-lg font-bold">Color Palette Tool</h2>
+      <div backgroundColor="pink" className="h-full bg-gray-50 rounded-md p-4">
+        <h2 className="text-lg font-bold">TEST TEXT</h2>
         {isSessionActive ? (
           functionCallOutput ? (
             <FunctionCallOutput functionCallOutput={functionCallOutput} />

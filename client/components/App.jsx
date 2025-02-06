@@ -3,6 +3,8 @@ import logo from "/assets/openai-logomark.svg";
 import EventLog from "./EventLog";
 import SessionControls from "./SessionControls";
 import ToolPanel from "./ToolPanel";
+import ThreeAnimation from "./ThreeAnimation";
+import * as THREE from "three";
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -10,35 +12,48 @@ export default function App() {
   const [dataChannel, setDataChannel] = useState(null);
   const peerConnection = useRef(null);
   const audioElement = useRef(null);
+  const [showEvents, setShowEvents] = useState(false); // New state to control visibility
+  const [analyzer, setAnalyzer] = useState(null);
 
   async function startSession() {
-    // Get an ephemeral key from the Fastify server
+    // 1. Get an ephemeral key
     const tokenResponse = await fetch("/token");
     const data = await tokenResponse.json();
     const EPHEMERAL_KEY = data.client_secret.value;
 
-    // Create a peer connection
+    // 2. Create a peer connection
     const pc = new RTCPeerConnection();
 
-    // Set up to play remote audio from the model
-    audioElement.current = document.createElement("audio");
-    audioElement.current.autoplay = true;
-    pc.ontrack = (e) => (audioElement.current.srcObject = e.streams[0]);
+    // 3. When the remote track arrives:
+    pc.ontrack = (e) => {
+      // If you still want to hear the audio in the browser:
+      audioElement.current = document.createElement("audio");
+      audioElement.current.srcObject = e.streams[0];
+      audioElement.current.autoplay = true;
 
-    // Add local audio track for microphone input in the browser
-    const ms = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
+      // Create an AudioContext + AnalyserNode
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(e.streams[0]);
+      const analyserNode = audioContext.createAnalyser();
+      analyserNode.fftSize = 32;
+
+      source.connect(analyserNode);
+      setAnalyzer(analyserNode);
+    };
+
+    // 4. Add local microphone track
+    const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
     pc.addTrack(ms.getTracks()[0]);
 
-    // Set up data channel for sending and receiving events
+    // 5. Data channel for sending/receiving events
     const dc = pc.createDataChannel("oai-events");
     setDataChannel(dc);
 
-    // Start the session using the Session Description Protocol (SDP)
+    // 6. Create SDP offer
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
+    // 7. Send offer to OpenAI Realtime
     const baseUrl = "https://api.openai.com/v1/realtime";
     const model = "gpt-4o-realtime-preview-2024-12-17";
     const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
@@ -50,12 +65,14 @@ export default function App() {
       },
     });
 
+    // 8. Get answer and set remote description
     const answer = {
       type: "answer",
       sdp: await sdpResponse.text(),
     };
     await pc.setRemoteDescription(answer);
 
+    // 9. Keep a ref to the PeerConnection
     peerConnection.current = pc;
   }
 
@@ -125,16 +142,16 @@ export default function App() {
 
   return (
     <>
-      <nav className="absolute top-0 left-0 right-0 h-16 flex items-center">
+      <nav className="absolute top-0 left-0 right-0 h-24 flex items-center text-2xl">
         <div className="flex items-center gap-4 w-full m-4 pb-2 border-0 border-b border-solid border-gray-200">
-          <img style={{ width: "24px" }} src={logo} />
+          <img style={{ width: "42px" }} src={logo} />
           <h1>realtime console</h1>
         </div>
       </nav>
       <main className="absolute top-16 left-0 right-0 bottom-0">
-        <section className="absolute top-0 left-0 right-[380px] bottom-0 flex">
+        <section className="absolute top-0 left-0 right-0 bottom-0 flex">
           <section className="absolute top-0 left-0 right-0 bottom-32 px-4 overflow-y-auto">
-            <EventLog events={events} />
+            <ThreeAnimation analyzer={analyzer} />
           </section>
           <section className="absolute h-32 left-0 right-0 bottom-0 p-4">
             <SessionControls
@@ -142,18 +159,10 @@ export default function App() {
               stopSession={stopSession}
               sendClientEvent={sendClientEvent}
               sendTextMessage={sendTextMessage}
-              events={events}
+              // events={events}
               isSessionActive={isSessionActive}
             />
           </section>
-        </section>
-        <section className="absolute top-0 w-[380px] right-0 bottom-0 p-4 pt-0 overflow-y-auto">
-          <ToolPanel
-            sendClientEvent={sendClientEvent}
-            sendTextMessage={sendTextMessage}
-            events={events}
-            isSessionActive={isSessionActive}
-          />
         </section>
       </main>
     </>
